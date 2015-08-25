@@ -4,5 +4,5 @@ Tandem is a small C++ library for finding tandem repeats in strings. At the mome
 
 example.cpp includes a simple example for DNA/RNA sequences. To compile the example just `make` in the tandem directory. You can run it like
 
-    echo "NNNACGTACGTNNAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGNNNNNNNN" | ./example
+    echo NNNACGTACGTNNAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGNNNNNNNN | ./example
 

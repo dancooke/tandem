@@ -76,6 +76,7 @@ void find_big_repeats(std::string& sequence)
     std::cout << "Looking for repeats in " << sequence.size() << "bp" << std::endl;
     
     if (sequence.back() != 'N') {
+        sequence.reserve(sequence.size() + 1);
         sequence.push_back('N'); // last character must not be in alphabet
     }
     
