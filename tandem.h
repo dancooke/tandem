@@ -76,11 +76,11 @@ inline std::vector<uint32_t> make_rank_array(const std::vector<uint32_t>& suffix
     return result;
 }
 
-// Llie et al (2010) show that this direct computation of LCE actually outperforms other O(n) and O(log n)
-// methods in practice.
-
 namespace detail
 {
+    // Llie et al (2010) show that this direct computation of LCE actually outperforms other O(n) and O(log n)
+    // methods in practice.
+    
     template <typename T>
     uint32_t forward_lce(const T& str, uint32_t i, uint32_t j, uint32_t n)
     {
@@ -321,9 +321,8 @@ namespace detail
                                        return StringRun {run.pos + delta, run.length, run.period};
                                    });
                     
-                    auto& curr = sorted_buckets[j];
-                    curr.reserve(curr.size() + num_targets);
-                    curr.insert(std::begin(curr), std::cbegin(shifted_targets), std::cend(shifted_targets));
+                    sorted_buckets[j].insert(std::begin(sorted_buckets[j]), std::cbegin(shifted_targets),
+                                             std::cend(shifted_targets));
                 }
             }
         }

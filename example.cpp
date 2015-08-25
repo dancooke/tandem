@@ -103,7 +103,7 @@ int main()
     std::getline(std::cin, sequence);
     
     if (!is_dna(sequence) && !is_rna(sequence)) {
-        std::cout << "this example is only for DNA or DNA sequences" << std::endl;
+        std::cout << "this example is only for DNA or RNA sequences" << std::endl;
         exit(0);
     }
     
