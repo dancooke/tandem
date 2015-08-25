@@ -75,6 +75,10 @@ void find_big_repeats(std::string& sequence)
 {
     std::cout << "Looking for repeats in " << sequence.size() << "bp" << std::endl;
     
+    if (sequence.back() != 'N') {
+        sequence.push_back('N'); // last character must not be in alphabet
+    }
+    
     auto n_shift_map = collapse_ns(sequence); // makes search a lot faster
     
     auto repeats = Tandem::find_maximal_repetitions(sequence);
