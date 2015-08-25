@@ -129,8 +129,8 @@ std::vector<uint32_t> make_lcp_array(const T& str, const std::vector<uint32_t>& 
     return result;
 }
 
-// LCF = Longest Common Factor
-std::vector<uint32_t> make_lcf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
+// LPF = Longest Previous Factor
+std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
 std::pair<std::vector<uint32_t>, std::vector<uint32_t>> make_lpf_and_prev_occ_arrays(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
 
 struct LZBlock
@@ -148,16 +148,16 @@ std::vector<LZBlock> lempel_ziv_factorisation(const T& str)
     
     auto sa  = make_suffix_array(str);
     auto lcp = make_lcp_array(str, sa);
-    auto lcf = make_lcf_array(std::move(sa), std::move(lcp));
+    auto lpf = make_lpf_array(std::move(sa), std::move(lcp));
     
     std::vector<LZBlock> result {};
-    result.reserve(str.size() - 1); // max possible blocks
+    result.reserve(str.size()); // max possible blocks
     
     uint32_t end {1};
     result.emplace_back(0, end);
     
     while (end < str.size()) {
-        auto m = std::max(uint32_t {1}, lcf[end]);
+        auto m = std::max(uint32_t {1}, lpf[end]);
         result.emplace_back(end, m);
         end += m;
     }
@@ -180,9 +180,9 @@ std::pair<std::vector<LZBlock>, std::vector<uint32_t>> lempel_ziv_factorisation_
     std::tie(lpf, prev_occ) = make_lpf_and_prev_occ_arrays(std::move(sa), std::move(lcp));
     
     std::vector<LZBlock> lz_blocks {};
-    lz_blocks.reserve(str.size() - 1); // max possible blocks
+    lz_blocks.reserve(str.size()); // max possible blocks
     std::vector<uint32_t> prev_lz_block_occurrence {};
-    prev_lz_block_occurrence.reserve(str.size() - 1);
+    prev_lz_block_occurrence.reserve(str.size());
     
     uint32_t end {1};
     

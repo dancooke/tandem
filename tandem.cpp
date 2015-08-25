@@ -14,7 +14,7 @@ namespace Tandem
 {
 
 // Implementation of algorithm found in Crochemore et al. (2008)
-std::vector<uint32_t> make_lcf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp)
+std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp)
 {
     auto n = sa.size();
     
