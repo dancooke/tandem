@@ -131,7 +131,9 @@ void rebase(std::vector<Tandem::StringRun>& runs, const std::map<size_t, size_t>
     auto shift_map_it = std::cbegin(shift_map);
     
     for (auto& run : runs) {
-        while (std::next(shift_map_it)->first <= run.pos) ++shift_map_it;
+        while (std::next(shift_map_it) != std::cend(shift_map) && std::next(shift_map_it)->first <= run.pos) {
+            ++shift_map_it;
+        }
         run.pos += static_cast<decltype(run.pos)>(shift_map_it->second);
     }
 }

@@ -41,6 +41,8 @@ void find_big_repeats(std::string& sequence)
     
     auto repeats = Tandem::find_maximal_repetitions(sequence);
     
+    Tandem::rebase(repeats, n_shift_map);
+    
     std::cout << "Found " << repeats.size() << " repeats" << std::endl;
     
     if (!repeats.empty()) {
