@@ -10,7 +10,7 @@
 #include "tandem.h"
 
 /**
-    This is a simple example showing how to find all exact tandem repeats in a DNA sequence using
+    Simple example showing how to find all exact tandem repeats in a DNA sequence using
     the Tandem API.
  */
 
