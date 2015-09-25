@@ -7,7 +7,7 @@
 #include <iterator>  // std::begin, std::end, std::distance, std::next
 #include <map>
 
-#include "tandem.h"
+#include "tandem.hpp"
 
 /**
     Simple example showing how to find all exact tandem repeats in a DNA sequence using
