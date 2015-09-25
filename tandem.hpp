@@ -1,4 +1,4 @@
-/*  tandem.h -- Finding tadem repeats in sequences
+/*  tandem.hpp -- Finding tadem repeats in sequences
  
  Copyright (C) 2015 University of Oxford.
  
