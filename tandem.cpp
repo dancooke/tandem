@@ -28,6 +28,16 @@
 
 namespace Tandem
 {
+std::vector<uint32_t> make_rank_array(const std::vector<uint32_t>& suffix_array)
+{
+    std::vector<uint32_t> result(suffix_array.size());
+    
+    for (uint32_t i {}; i < suffix_array.size(); ++i) {
+        result[suffix_array[i]] = i;
+    }
+    
+    return result;
+}
 
 // Implementation of algorithm found in Crochemore et al. (2008)
 std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp)

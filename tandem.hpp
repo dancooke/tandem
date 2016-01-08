@@ -69,7 +69,10 @@ inline bool operator==(const StringRun& lhs, const StringRun& rhs)
 {
     return lhs.pos == rhs.pos && lhs.length == rhs.length;
 }
-inline bool operator!=(const StringRun& lhs, const StringRun& rhs) { return !operator==(lhs, rhs); }
+inline bool operator!=(const StringRun& lhs, const StringRun& rhs)
+{
+    return !operator==(lhs, rhs);
+}
 
 // Wrapper for divsufsort
 template <typename T>
@@ -83,16 +86,7 @@ std::vector<uint32_t> make_suffix_array(const T& str)
 }
 
 // rank array is inverse suffix array
-inline std::vector<uint32_t> make_rank_array(const std::vector<uint32_t>& suffix_array)
-{
-    std::vector<uint32_t> result(suffix_array.size());
-    
-    for (uint32_t i {}; i < suffix_array.size(); ++i) {
-        result[suffix_array[i]] = i;
-    }
-    
-    return result;
-}
+std::vector<uint32_t> make_rank_array(const std::vector<uint32_t>& suffix_array);
 
 namespace detail
 {
