@@ -59,7 +59,8 @@ namespace Tandem
 struct StringRun
 {
     StringRun() = default;
-    explicit StringRun(uint32_t pos, uint32_t length, uint32_t period) : pos {pos}, length {length}, period {period} {}
+    explicit StringRun(uint32_t pos, uint32_t length, uint32_t period)
+    : pos {pos}, length {length}, period {period} {}
     
     uint32_t pos, length, period;
 };
@@ -147,8 +148,10 @@ std::vector<uint32_t> make_lcp_array(const T& str, const std::vector<uint32_t>& 
 }
 
 // LPF = Longest Previous Factor
-std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
-std::pair<std::vector<uint32_t>, std::vector<uint32_t>> make_lpf_and_prev_occ_arrays(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
+std::vector<uint32_t>
+make_lpf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
+std::pair<std::vector<uint32_t>, std::vector<uint32_t>>
+make_lpf_and_prev_occ_arrays(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
 
 template <typename T>
 auto make_lpf_array(const T& str)
@@ -200,7 +203,8 @@ std::vector<LZBlock> lempel_ziv_factorisation(const T& str)
 
 // Implementation of algorithm found in Crochemore et al. (2008)
 template <typename T>
-std::pair<std::vector<LZBlock>, std::vector<uint32_t>> lempel_ziv_factorisation_with_prev_block_occurences(const T& str)
+std::pair<std::vector<LZBlock>, std::vector<uint32_t>>
+lempel_ziv_factorisation_with_prev_block_occurences(const T& str)
 {
     if (str.empty()) return {{}, {}};
     
@@ -232,12 +236,13 @@ std::pair<std::vector<LZBlock>, std::vector<uint32_t>> lempel_ziv_factorisation_
 
 namespace detail
 {
-    // Implements Mains algorithm found in Main (1989).
+    // Implements Mains algorithm found in Main (1989). Obscure notation as in paper.
     template <typename T>
-    std::deque<StringRun> find_leftmost_maximal_repetitions(const T& str, const std::vector<LZBlock>& lz_blocks,
-                                                            const uint32_t min_period = 1, const uint32_t max_period = -1)
+    std::deque<StringRun>
+    find_leftmost_maximal_repetitions(const T& str, const std::vector<LZBlock>& lz_blocks,
+                                      const uint32_t min_period = 1, const uint32_t max_period = -1)
     {
-        std::deque<StringRun> result {}; // using std::deque rather than std::vector for nice growth properties
+        std::deque<StringRun> result {};
         
         for (uint32_t h {1}; h < lz_blocks.size(); ++h) {
             const auto u   = lz_blocks[h].pos;
@@ -248,8 +253,8 @@ namespace detail
             
             // rightmax periodicities
             for (uint32_t j {min_period}; j <= std::min(n, max_period); ++j) {
-                auto ls = detail::backward_lce(str, u - 1, u + j - 1, t);
-                auto lp = detail::forward_lce(str, u + j, u, end);
+                const auto ls = detail::backward_lce(str, u - 1, u + j - 1, t);
+                const auto lp = detail::forward_lce(str, u + j, u, end);
                 
                 if (ls > 0 && ls + lp >= j && j + lp < n) {
                     result.emplace_back(u - ls, j + lp + ls, j);
@@ -258,8 +263,8 @@ namespace detail
             
             // leftmax periodicities
             for (uint32_t j {min_period}; j < std::min(m, max_period); ++j) {
-                auto ls = detail::backward_lce(str, u - j - 1, u - 1, t);
-                auto lp = detail::forward_lce(str, u, u - j, end);
+                const auto ls = detail::backward_lce(str, u - j - 1, u - 1, t);
+                const auto lp = detail::forward_lce(str, u, u - j, end);
                 
                 if (ls + lp >= j) {
                     result.emplace_back(u - (ls + j), j + lp + ls, j);
@@ -271,11 +276,12 @@ namespace detail
     }
     
     // just reserves enough space to avoid reallocations
-    std::vector<std::vector<StringRun>> get_init_buckets(const size_t n, const std::deque<StringRun>& lmrs);
+    std::vector<std::vector<StringRun>> get_init_buckets(size_t n, const std::deque<StringRun>& lmrs);
     
     template <typename T>
     std::vector<std::vector<StringRun>>
-    get_end_buckets(const T& str, const std::vector<LZBlock>& lz_blocks, const uint32_t min_period, const uint32_t max_period)
+    get_end_buckets(const T& str, const std::vector<LZBlock>& lz_blocks,
+                    const uint32_t min_period, const uint32_t max_period)
     {
         const auto lmrs = find_leftmost_maximal_repetitions(str, lz_blocks, min_period, max_period);
         
@@ -292,11 +298,13 @@ namespace detail
     }
     
     // just reserves enough space to avoid reallocations
-    std::vector<std::vector<StringRun>> get_init_buckets(const size_t n, const std::vector<std::vector<StringRun>>& end_buckets);
+    std::vector<std::vector<StringRun>>
+    get_init_buckets(size_t n, const std::vector<std::vector<StringRun>>& end_buckets);
     
     template <typename T>
     std::vector<std::vector<StringRun>>
-    get_sorted_buckets(const T& str, const std::vector<LZBlock>& lz_blocks, const uint32_t min_period, const uint32_t max_period)
+    get_sorted_buckets(const T& str, const std::vector<LZBlock>& lz_blocks,
+                       const uint32_t min_period, const uint32_t max_period)
     {
         auto end_buckets = get_end_buckets(str, lz_blocks, min_period, max_period);
         
