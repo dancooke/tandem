@@ -346,7 +346,7 @@ namespace detail
                 const auto& target = sorted_buckets[j - delta];
                 
                 const auto last_target_itr = std::lower_bound(std::cbegin(target), std::cend(target), v,
-                                                              [] (const auto& run, auto val) {
+                                                              [] (const auto& run, const auto val) {
                                                                   return run.pos + run.length < val;
                                                               });
                 
@@ -423,7 +423,7 @@ std::map<size_t, size_t> collapse(SequenceType& sequence, const char c)
     
     for (auto first = std::begin(sequence); first != last;) {
         const auto it1 = std::adjacent_find(first, last,
-                                            [c] (char lhs, char rhs) {
+                                            [c] (const char lhs, const char rhs) {
                                                 return lhs == c && lhs == rhs;
                                             });
         
@@ -441,7 +441,10 @@ std::map<size_t, size_t> collapse(SequenceType& sequence, const char c)
     
     if (!result.empty()) {
         sequence.erase(std::unique(std::next(std::begin(sequence), std::cbegin(result)->first), last,
-                                   [c] (char lhs, char rhs) { return lhs == c && lhs == rhs; }), last);
+                                   [c] (const char lhs, const char rhs) {
+                                       return lhs == c && lhs == rhs;
+                                   }),
+                       last);
     }
     
     return result;
