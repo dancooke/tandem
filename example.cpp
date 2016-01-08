@@ -1,10 +1,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cstdint>   // std::uint32_t;
-#include <cstddef>   // std::size_t
-#include <algorithm> // std::find_if_not, std::unique
-#include <iterator>  // std::begin, std::end, std::distance, std::next
+#include <cstdint>
+#include <cstddef>
+#include <algorithm>
+#include <iterator>
 #include <map>
 
 #include "tandem.hpp"

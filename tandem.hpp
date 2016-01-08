@@ -28,13 +28,13 @@
 #include <vector>
 #include <deque>
 #include <map>
-#include <cstdint>   // uint32_t
-#include <cstddef>   // size_t
-#include <algorithm> // std::mismatch, std::max, std::min, std::find, std::transform, std::lower_bound
-#include <iterator>  // std::distance, std::cbegin, std::cend, std::begin, std::end, std::crend
-#include <tuple>     // std::pair, std::tie
-#include <utility>   // std::move
-#include <numeric>   // std::accumulate
+#include <cstdint>
+#include <cstddef>
+#include <algorithm>
+#include <iterator>
+#include <tuple>
+#include <utility>
+#include <numeric>
 
 #include "libdivsufsort/divsufsort.h"
 
