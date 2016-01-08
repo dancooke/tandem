@@ -44,7 +44,8 @@ std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint3
     stack.push(0);
     
     for (uint32_t i {1}; i <= n; ++i) {
-        while (!stack.empty() && (sa[i] == -1 || sa[i] < sa[stack.top()] || (sa[i] > sa[stack.top()] && lcp[i] <= lcp[stack.top()]))) {
+        while (!stack.empty() && (sa[i] == -1 || sa[i] < sa[stack.top()]
+                                  || (sa[i] > sa[stack.top()] && lcp[i] <= lcp[stack.top()]))) {
             if (sa[i] < sa[stack.top()]) {
                 std::tie(lcp[i], result[sa[stack.top()]]) = std::minmax(lcp[stack.top()], uint32_t {lcp[i]});
             } else {
@@ -62,7 +63,8 @@ std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint3
 }
 
 // Implementation of algorithm found in Crochemore et al. (2008)
-std::pair<std::vector<uint32_t>, std::vector<uint32_t>> make_lpf_and_prev_occ_arrays(std::vector<uint32_t> sa, std::vector<uint32_t> lcp)
+std::pair<std::vector<uint32_t>, std::vector<uint32_t>>
+make_lpf_and_prev_occ_arrays(std::vector<uint32_t> sa, std::vector<uint32_t> lcp)
 {
     const auto n = sa.size();
     
@@ -98,12 +100,13 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> make_lpf_and_prev_occ_ar
         }
     }
     
-    return {lpf, prev_occ};
+    return std::make_pair(std::move(lpf), std::move(prev_occ));
 }
 
 namespace detail
 {
-    std::vector<std::vector<StringRun>> get_init_buckets(const std::size_t n, const std::deque<StringRun>& lmrs)
+    std::vector<std::vector<StringRun>>
+    get_init_buckets(const std::size_t n, const std::deque<StringRun>& lmrs)
     {
         std::vector<uint32_t> counts(n, 0);
         
@@ -120,7 +123,8 @@ namespace detail
         return result;
     }
     
-    std::vector<std::vector<StringRun>> get_init_buckets(const std::size_t n, const std::vector<std::vector<StringRun>>& end_buckets)
+    std::vector<std::vector<StringRun>>
+    get_init_buckets(const std::size_t n, const std::vector<std::vector<StringRun>>& end_buckets)
     {
         std::vector<uint32_t> counts(n, 0);
         

@@ -104,7 +104,8 @@ namespace detail
     {
         using std::cbegin;
         return static_cast<uint32_t>(std::distance(cbegin(str) + i, std::mismatch(cbegin(str) + i,
-                                                                                  cbegin(str) + n, cbegin(str) + j).first));
+                                                                                  cbegin(str) + n,
+                                                                                  cbegin(str) + j).first));
     }
     
     template <typename T>
@@ -118,7 +119,8 @@ namespace detail
     {
         using std::crend;
         return static_cast<uint32_t>(std::distance(crend(str) - i - 1, std::mismatch(crend(str) - i - 1,
-                                                                                     crend(str) - n, crend(str) - j - 1).first));
+                                                                                     crend(str) - n,
+                                                                                     crend(str) - j - 1).first));
     }
     
     template <typename T>
@@ -213,6 +215,7 @@ lempel_ziv_factorisation_with_prev_block_occurences(const T& str)
     
     std::vector<LZBlock> lz_blocks {};
     lz_blocks.reserve(str.size()); // max possible blocks
+    
     std::vector<uint32_t> prev_lz_block_occurrence {};
     prev_lz_block_occurrence.reserve(str.size());
     
@@ -222,7 +225,7 @@ lempel_ziv_factorisation_with_prev_block_occurences(const T& str)
     prev_lz_block_occurrence.emplace_back(-1);
     
     while (end < str.size()) {
-        auto m = std::max(uint32_t {1}, lpf[end]);
+        const auto m = std::max(uint32_t {1}, lpf[end]);
         lz_blocks.emplace_back(end, m);
         prev_lz_block_occurrence.emplace_back(prev_occ[end]);
         end += m;
@@ -231,7 +234,7 @@ lempel_ziv_factorisation_with_prev_block_occurences(const T& str)
     lz_blocks.shrink_to_fit();
     prev_lz_block_occurrence.shrink_to_fit();
     
-    return {lz_blocks, prev_lz_block_occurrence};
+    return std::make_pair(std::move(lz_blocks), std::move(prev_lz_block_occurrence));
 }
 
 namespace detail
@@ -342,17 +345,17 @@ namespace detail
             for (auto j = block.pos; j < block_end; ++j) {
                 const auto& target = sorted_buckets[j - delta];
                 
-                auto last_target = std::lower_bound(std::cbegin(target), std::cend(target), v,
-                                                    [] (const auto& run, auto val) {
-                                                        return run.pos + run.length < val;
-                                                    });
+                const auto last_target_itr = std::lower_bound(std::cbegin(target), std::cend(target), v,
+                                                              [] (const auto& run, auto val) {
+                                                                  return run.pos + run.length < val;
+                                                              });
                 
-                auto num_targets = std::distance(std::cbegin(target), last_target);
+                const auto num_targets = std::distance(std::cbegin(target), last_target_itr);
                 
                 if (num_targets > 0) {
                     std::vector<StringRun> shifted_targets(num_targets);
                     
-                    std::transform(std::cbegin(target), last_target, std::begin(shifted_targets),
+                    std::transform(std::cbegin(target), last_target_itr, std::begin(shifted_targets),
                                    [delta] (const auto& run) {
                                        return StringRun {run.pos + delta, run.length, run.period};
                                    });
@@ -410,19 +413,23 @@ find_maximal_repetitions(const T& str, const uint32_t min_period = 1, const uint
  auto n_shift_map = colapse(str, 'N'); // str is now "NACGTNTGCNAN", n_shift_map contains (0, 2), (4, 3), (9, 6)
  */
 template <typename SequenceType>
-std::map<size_t, size_t> collapse(SequenceType& sequence, char c)
+std::map<size_t, size_t> collapse(SequenceType& sequence, const char c)
 {
     std::map<size_t, size_t> result {};
     
-    auto last = std::end(sequence);
+    const auto last = std::end(sequence);
+    
     size_t position {}, num_removed {};
     
     for (auto first = std::begin(sequence); first != last;) {
-        auto it1 = std::adjacent_find(first, last, [c] (char lhs, char rhs) { return lhs == c && lhs == rhs; });
+        const auto it1 = std::adjacent_find(first, last,
+                                            [c] (char lhs, char rhs) {
+                                                return lhs == c && lhs == rhs;
+                                            });
         
         if (it1 == last) break;
         
-        auto it2 = std::find_if_not(it1, last, [c] (char b) { return b == c; });
+        const auto it2 = std::find_if_not(it1, last, [c] (const char b) { return b == c; });
         
         position    += std::distance(first, it1);
         num_removed += std::distance(it1, it2) - 1;
