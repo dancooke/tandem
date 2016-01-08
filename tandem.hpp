@@ -370,7 +370,7 @@ namespace detail
     }
     
     template <typename T>
-    size_t get_num_runs(const std::vector<T>& buckets)
+    size_t count_runs(const std::vector<T>& buckets)
     {
         return std::accumulate(std::cbegin(buckets), std::cend(buckets), size_t {},
                                [] (const auto curr, const auto& bucket) { return curr + bucket.size(); });
@@ -388,7 +388,7 @@ find_maximal_repetitions(const T& str, const uint32_t min_period = 1, const uint
     auto sorted_buckets = detail::find_maximal_repetitions(str, min_period, max_period);
     
     std::vector<StringRun> result {};
-    result.reserve(detail::get_num_runs(sorted_buckets));
+    result.reserve(detail::count_runs(sorted_buckets));
     
     for (auto& bucket : sorted_buckets) {
         result.insert(std::end(result), std::cbegin(bucket), std::cend(bucket));
