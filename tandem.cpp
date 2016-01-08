@@ -138,7 +138,7 @@ namespace detail
         
         return result;
     }
-} // end namespace detail
+} // namespace detail
 
 void rebase(std::vector<Tandem::StringRun>& runs, const std::map<size_t, size_t>& shift_map)
 {
@@ -154,4 +154,4 @@ void rebase(std::vector<Tandem::StringRun>& runs, const std::map<size_t, size_t>
     }
 }
 
-} // end namespace Tandem
+} // namespace Tandem

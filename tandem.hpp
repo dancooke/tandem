@@ -125,7 +125,7 @@ namespace detail
     {
         return backward_lce(str, i, j, uint32_t {});
     }
-} // end namespace detail
+} // namespace detail
 
 // LCP = Longest Common Prefix. O(n) implementation given in Kasai et al (2001).
 template <typename T>
@@ -354,7 +354,7 @@ namespace detail
                                [] (auto lhs, const auto& rhs) { return lhs + rhs.size(); });
     }
     
-} // end namespace detail
+} // namespace detail
 
 /**
  This is the main function for finding exact repeats in a sequence.
@@ -423,6 +423,6 @@ std::map<size_t, size_t> collapse(SequenceType& sequence, char c)
 
 void rebase(std::vector<Tandem::StringRun>& runs, const std::map<size_t, size_t>& shift_map);
 
-} // end namespace Tandem
+} // namespace Tandem
 
 #endif /* defined(__tandem__tandem__) */
