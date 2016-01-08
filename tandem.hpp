@@ -373,7 +373,7 @@ namespace detail
     size_t get_num_runs(const std::vector<T>& buckets)
     {
         return std::accumulate(std::cbegin(buckets), std::cend(buckets), size_t {},
-                               [] (auto lhs, const auto& rhs) { return lhs + rhs.size(); });
+                               [] (const auto curr, const auto& bucket) { return curr + bucket.size(); });
     }
     
 } // namespace detail
