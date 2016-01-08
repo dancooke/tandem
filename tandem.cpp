@@ -32,7 +32,7 @@ namespace Tandem
 // Implementation of algorithm found in Crochemore et al. (2008)
 std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp)
 {
-    auto n = sa.size();
+    const auto n = sa.size();
     
     std::vector<uint32_t> result(n, 0);
     
@@ -64,7 +64,7 @@ std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint3
 // Implementation of algorithm found in Crochemore et al. (2008)
 std::pair<std::vector<uint32_t>, std::vector<uint32_t>> make_lpf_and_prev_occ_arrays(std::vector<uint32_t> sa, std::vector<uint32_t> lcp)
 {
-    auto n = sa.size();
+    const auto n = sa.size();
     
     std::vector<uint32_t> lpf(n, 0), prev_occ(n, 0);
     
@@ -81,7 +81,7 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> make_lpf_and_prev_occ_ar
         while (!stack.empty() && (sa[i] == -1 || sa[i] < stack.top().second)) {
             std::tie(u, lpf[stack.top().second]) = std::minmax(stack.top().first, uint32_t {u});
             
-            auto v = stack.top();
+            const auto v = stack.top();
             stack.pop();
             
             if (lpf[v.second] == 0) {

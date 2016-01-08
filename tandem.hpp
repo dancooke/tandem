@@ -131,7 +131,7 @@ namespace detail
 template <typename T>
 std::vector<uint32_t> make_lcp_array(const T& str, const std::vector<uint32_t>& suffix_array)
 {
-    auto rank = make_rank_array(suffix_array);
+    const auto rank = make_rank_array(suffix_array);
     
     std::vector<uint32_t> result(suffix_array.size());
     
@@ -150,6 +150,22 @@ std::vector<uint32_t> make_lcp_array(const T& str, const std::vector<uint32_t>& 
 std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
 std::pair<std::vector<uint32_t>, std::vector<uint32_t>> make_lpf_and_prev_occ_arrays(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
 
+template <typename T>
+auto make_lpf_array(const T& str)
+{
+    auto sa  = make_suffix_array(str);
+    auto lcp = make_lcp_array(str, sa);
+    return make_lpf_array(std::move(sa), std::move(lcp));
+}
+
+template <typename T>
+auto make_lpf_and_prev_occ_arrays(const T& str)
+{
+    auto sa  = make_suffix_array(str);
+    auto lcp = make_lcp_array(str, sa);
+    return make_lpf_and_prev_occ_arrays(std::move(sa), std::move(lcp));
+}
+    
 struct LZBlock
 {
     LZBlock() = default;
@@ -163,9 +179,7 @@ std::vector<LZBlock> lempel_ziv_factorisation(const T& str)
 {
     if (str.empty()) return {};
     
-    auto sa  = make_suffix_array(str);
-    auto lcp = make_lcp_array(str, sa);
-    auto lpf = make_lpf_array(std::move(sa), std::move(lcp));
+    const auto lpf = make_lpf_array(str);
     
     std::vector<LZBlock> result {};
     result.reserve(str.size()); // max possible blocks
@@ -174,7 +188,7 @@ std::vector<LZBlock> lempel_ziv_factorisation(const T& str)
     result.emplace_back(0, end);
     
     while (end < str.size()) {
-        auto m = std::max(uint32_t {1}, lpf[end]);
+        const auto m = std::max(uint32_t {1}, lpf[end]);
         result.emplace_back(end, m);
         end += m;
     }
@@ -190,11 +204,8 @@ std::pair<std::vector<LZBlock>, std::vector<uint32_t>> lempel_ziv_factorisation_
 {
     if (str.empty()) return {{}, {}};
     
-    auto sa  = make_suffix_array(str);
-    auto lcp = make_lcp_array(str, sa);
-    
     std::vector<uint32_t> lpf, prev_occ;
-    std::tie(lpf, prev_occ) = make_lpf_and_prev_occ_arrays(std::move(sa), std::move(lcp));
+    std::tie(lpf, prev_occ) = make_lpf_and_prev_occ_arrays(str);
     
     std::vector<LZBlock> lz_blocks {};
     lz_blocks.reserve(str.size()); // max possible blocks
@@ -266,7 +277,7 @@ namespace detail
     std::vector<std::vector<StringRun>>
     get_end_buckets(const T& str, const std::vector<LZBlock>& lz_blocks, const uint32_t min_period, const uint32_t max_period)
     {
-        auto lmrs = find_leftmost_maximal_repetitions(str, lz_blocks, min_period, max_period);
+        const auto lmrs = find_leftmost_maximal_repetitions(str, lz_blocks, min_period, max_period);
         
         auto result = get_init_buckets(str.size(), lmrs);
         
@@ -316,9 +327,9 @@ namespace detail
         for (uint32_t k {}; k < lz_blocks.size(); ++k) {
             const auto& block = lz_blocks[k];
             
-            auto block_end = block.pos + block.length;
-            auto delta     = block.pos - ((prev_lz_block_occurrence[k] == -1) ? 0 : prev_lz_block_occurrence[k]);
-            auto v         = block_end - delta;
+            const auto block_end = block.pos + block.length;
+            const auto delta     = block.pos - ((prev_lz_block_occurrence[k] == -1) ? 0 : prev_lz_block_occurrence[k]);
+            const auto v         = block_end - delta;
             
             for (auto j = block.pos; j < block_end; ++j) {
                 const auto& target = sorted_buckets[j - delta];
