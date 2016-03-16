@@ -70,6 +70,4 @@ int main()
     }
     
     find_big_repeats(sequence);
-    
-    return 0;
 }
