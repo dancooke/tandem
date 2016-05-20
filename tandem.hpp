@@ -87,7 +87,7 @@ std::vector<uint32_t> make_suffix_array(const T& str)
 }
 
 template <typename T>
-std::vector<uint32_t> make_suffix_array(const T& str, const size_t extra_capacity)
+std::vector<uint32_t> make_suffix_array(const T& str, const std::size_t extra_capacity)
 {
     std::vector<saidx_t> sa(str.size());
     
@@ -147,13 +147,13 @@ namespace detail
 template <typename T>
 std::vector<uint32_t>
 make_lcp_array(const T& str, const std::vector<uint32_t>& suffix_array,
-               const size_t extra_capacity = 0)
+               const std::size_t extra_capacity = 0)
 {
     const auto rank = make_rank_array(suffix_array, extra_capacity);
     
     std::vector<uint32_t> result(suffix_array.size() + extra_capacity);
     
-    for (uint32_t i {0}, h {0}; i <(suffix_array.size() - extra_capacity); ++i) {
+    for (uint32_t i {0}, h {0}; i < (suffix_array.size() - extra_capacity); ++i) {
         if (rank[i] > 0) {
             h += detail::forward_lce(str, i + h, suffix_array[rank[i] - 1] + h);
             result[rank[i]] = h;
@@ -295,7 +295,7 @@ namespace detail
     }
     
     // just reserves enough space to avoid reallocations
-    std::vector<std::vector<StringRun>> get_init_buckets(size_t n, const std::deque<StringRun>& lmrs);
+    std::vector<std::vector<StringRun>> get_init_buckets(std::size_t n, const std::deque<StringRun>& lmrs);
     
     template <typename T>
     std::vector<std::vector<StringRun>>
@@ -318,7 +318,7 @@ namespace detail
     
     // just reserves enough space to avoid reallocations
     std::vector<std::vector<StringRun>>
-    get_init_buckets(size_t n, const std::vector<std::vector<StringRun>>& end_buckets);
+    get_init_buckets(std::size_t n, const std::vector<std::vector<StringRun>>& end_buckets);
     
     template <typename T>
     std::vector<std::vector<StringRun>>
@@ -386,31 +386,29 @@ namespace detail
     }
     
     template <typename T>
-    size_t count_runs(const std::vector<T>& buckets)
+    auto count_runs(const std::vector<T>& buckets)
     {
-        return std::accumulate(std::cbegin(buckets), std::cend(buckets), size_t {},
-                               [] (const auto curr, const auto& bucket) { return curr + bucket.size(); });
+        return std::accumulate(std::cbegin(buckets), std::cend(buckets), std::size_t {0},
+                               [] (const auto curr, const auto& bucket) {
+                                   return curr + bucket.size();
+                               });
     }
     
-    template <typename T>
+    template <typename ForwardIt>
     std::vector<StringRun>
-    find_homopolymers(const T& sequence)
+    find_homopolymers(const ForwardIt first, const ForwardIt last)
     {
         std::vector<StringRun> result {};
         
-        const auto first = std::cbegin(sequence);
-        const auto last  = std::cend(sequence);
-        
-        auto curr = first;
-        
-        while (true) {
+        for (auto curr = first; curr != last; ) {
             const auto it = std::adjacent_find(curr, last);
             
             if (it == last) break;
             
             const auto base = *it;
             
-            const auto it2 = std::find_if_not(std::next(it), last, [base] (const auto b) { return b == base; });
+            const auto it2 = std::find_if_not(std::next(it), last,
+                                              [base] (const auto b) { return b == base; });
             
             result.emplace_back(static_cast<std::uint32_t>(std::distance(first, it)),
                                 static_cast<std::uint32_t>(std::distance(it, it2)),
@@ -423,6 +421,75 @@ namespace detail
         
         return result;
     }
+    
+    template <std::size_t N, typename ForwardIt>
+    std::vector<StringRun>
+    find_exact_tandem_repeats(const ForwardIt first, const ForwardIt last)
+    {
+        std::vector<StringRun> result {};
+        
+        if (std::distance(first, last) < 2 * N) return result;
+        
+        auto it1 = std::adjacent_find(first, last, std::not_equal_to<void> {});
+        
+        if (it1 == last) return result;
+        
+        result.reserve(std::min(std::distance(first, last) / N, std::size_t {1024}));
+        
+        for (auto it2 = std::next(it1, N); it2 < last; ) {
+            const auto p = std::mismatch(it2, last, it1);
+            
+            if (p.second >= it2) {
+                result.emplace_back(static_cast<uint32_t>(std::distance(first, it1)),
+                                    static_cast<uint32_t>(std::distance(it1, p.first)),
+                                    N);
+                it1 = p.second;
+            } else {
+                ++it1;
+            }
+            
+            it1 = std::adjacent_find(it1, last, std::not_equal_to<void> {});
+            
+            if (it1 == last) break;
+            
+            it2 = std::next(it1, N);
+        }
+        
+        result.shrink_to_fit();
+        
+        return result;
+    }
+    
+    template <typename T>
+    auto find_homopolymers(const T& str)
+    {
+        return find_homopolymers(std::cbegin(str), std::cend(str));
+    }
+    
+    template <typename T>
+    auto find_exact_dinucleotide_tandem_repeats(const T& str)
+    {
+        return find_exact_tandem_repeats<2>(std::cbegin(str), std::cend(str));
+    }
+    
+    template <typename T>
+    auto find_exact_trinucleotide_tandem_repeats(const T& str)
+    {
+        return find_exact_tandem_repeats<3>(std::cbegin(str), std::cend(str));
+    }
+    
+    template <typename Container1, typename Container2>
+    void append(Container2&& src, Container1& dst)
+    {
+        const auto it = dst.insert(std::end(dst),
+                                   std::make_move_iterator(std::begin(src)),
+                                   std::make_move_iterator(std::end(src)));
+        
+        std::inplace_merge(std::begin(dst), it, std::end(dst),
+                           [] (const StringRun& lhs, const StringRun& rhs) {
+                               return lhs.pos < rhs.pos;
+                           });
+    }
 } // namespace detail
 
 /**
@@ -430,10 +497,42 @@ namespace detail
  */
 template <typename T>
 std::vector<StringRun>
-find_maximal_repetitions(const T& str, const uint32_t min_period = 1, const uint32_t max_period = -1)
+find_maximal_repetitions(const T& str, uint32_t min_period = 1, const uint32_t max_period = -1)
 {
-    if (max_period == 1) {
-        return detail::find_homopolymers(str); // optimise this case
+    if (min_period == 0) ++min_period;
+    
+    if (str.empty() || str.size() < min_period) return {};
+    
+    if (min_period > max_period) {
+        throw std::domain_error {"find_maximal_repetitions: given unsatisfiable condition min_period > max_period"};
+    }
+    
+    if (max_period <= 3) { // The naive algorithm is faster in these cases
+        if (min_period == max_period) {
+            switch(min_period) {
+                case 1: return detail::find_homopolymers(str);
+                case 2: return detail::find_exact_dinucleotide_tandem_repeats(str);
+                case 3: return detail::find_exact_trinucleotide_tandem_repeats(str);
+            }
+        }
+        
+        if (min_period == 1) { // known max_period >= 2
+            auto result = detail::find_homopolymers(str);
+            
+            detail::append(detail::find_exact_dinucleotide_tandem_repeats(str), result);
+            
+            if (max_period == 3) {
+                detail::append(detail::find_exact_trinucleotide_tandem_repeats(str), result);
+            }
+            
+            return result;
+        } else { // min_period == 2 && max_period == 3
+            auto result = detail::find_exact_dinucleotide_tandem_repeats(str);
+            
+            detail::append(detail::find_exact_trinucleotide_tandem_repeats(str), result);
+            
+            return result;
+        }
     }
     
     auto sorted_buckets = detail::find_maximal_repetitions(str, min_period, max_period);
@@ -450,7 +549,7 @@ find_maximal_repetitions(const T& str, const uint32_t min_period = 1, const uint
     return result;
 }
 
-/** 
+/**
  Replaces all contiguous sub-sequences of c with a single c, inplace, and returns a map of
  each c position in the new sequence, and how many c's have been removed up to the first non-c
  base past the position. This is just a helper that can speed up repetition finding if the sequence
@@ -464,13 +563,13 @@ find_maximal_repetitions(const T& str, const uint32_t min_period = 1, const uint
  auto n_shift_map = colapse(str, 'N'); // str is now "NACGTNTGCNAN", n_shift_map contains (0, 2), (4, 3), (9, 6)
  */
 template <typename SequenceType>
-std::map<size_t, size_t> collapse(SequenceType& sequence, const char c)
+std::map<std::size_t, std::size_t> collapse(SequenceType& sequence, const char c)
 {
-    std::map<size_t, size_t> result {};
+    std::map<std::size_t, std::size_t> result {};
     
     const auto last = std::end(sequence);
     
-    size_t position {}, num_removed {};
+    std::size_t position {0}, num_removed {0};
     
     for (auto first = std::begin(sequence); first != last;) {
         const auto it1 = std::adjacent_find(first, last,

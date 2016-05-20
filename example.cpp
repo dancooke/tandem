@@ -60,8 +60,7 @@ void find_big_repeats(std::string& sequence)
 
 int main()
 {
-    std::string sequence {};
-    
+    std::string sequence;
     std::getline(std::cin, sequence);
     
     if (!is_dna(sequence) && !is_rna(sequence)) {
