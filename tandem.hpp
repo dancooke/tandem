@@ -340,15 +340,13 @@ namespace detail
         return result;
     }
     
-    // Implements the algorithm described in Kolpakov & Kucherov (1999)
     template <typename T>
     std::vector<std::vector<StringRun>>
-    find_maximal_repetitions(const T& str, const uint32_t min_period, const uint32_t max_period)
+    find_maximal_repetitions(const T& str,
+                             const std::vector<LZBlock>& lz_blocks,
+                             const std::vector<uint32_t>& prev_lz_block_occurrence,
+                             const uint32_t min_period, const uint32_t max_period)
     {
-        std::vector<LZBlock> lz_blocks;
-        std::vector<uint32_t> prev_lz_block_occurrence;
-        std::tie(lz_blocks, prev_lz_block_occurrence) = lempel_ziv_factorisation_with_prev_block_occurences(str);
-        
         auto sorted_buckets = get_sorted_buckets(str, lz_blocks, min_period, max_period);
         
         for (uint32_t k {0}; k < lz_blocks.size(); ++k) {
@@ -383,6 +381,20 @@ namespace detail
         }
         
         return sorted_buckets;
+
+    }
+    
+    // Implements the algorithm described in Kolpakov & Kucherov (1999)
+    template <typename T>
+    std::vector<std::vector<StringRun>>
+    find_maximal_repetitions(const T& str, const uint32_t min_period, const uint32_t max_period)
+    {
+        std::vector<LZBlock> lz_blocks;
+        std::vector<uint32_t> prev_lz_block_occurrence;
+        
+        std::tie(lz_blocks, prev_lz_block_occurrence) = lempel_ziv_factorisation_with_prev_block_occurences(str);
+        
+        return find_maximal_repetitions(str, lz_blocks, prev_lz_block_occurrence, min_period, max_period);
     }
     
     template <typename T>
