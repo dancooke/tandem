@@ -77,35 +77,30 @@ inline bool operator!=(const StringRun& lhs, const StringRun& rhs)
 
 // Wrapper for divsufsort
 template <typename T>
-std::vector<uint32_t> make_suffix_array(const T& str)
-{
-    std::vector<saidx_t> sa(str.size()); // divsufsort requires signed integers so need to copy
-    
-    divsufsort(str.data(), sa.data(), static_cast<int>(str.size()));
-    
-    return std::vector<uint32_t> {std::cbegin(sa), std::cend(sa)};
-}
-
-template <typename T>
-std::vector<uint32_t> make_suffix_array(const T& str, const std::size_t extra_capacity)
+std::vector<uint32_t>& make_suffix_array(const T& str, std::vector<uint32_t>& result)
 {
     std::vector<saidx_t> sa(str.size());
     
     divsufsort(str.data(), sa.data(), static_cast<int>(str.size()));
     
-    std::vector<uint32_t> result(str.size() + extra_capacity);
+    result.resize(str.size());
     
-    const auto it = std::copy(std::cbegin(sa), std::cend(sa), std::begin(result));
-    
-    std::fill_n(it, extra_capacity, 0);
+    std::copy(std::cbegin(sa), std::cend(sa), std::begin(result));
     
     return result;
 }
 
+template <typename T>
+std::vector<uint32_t> make_suffix_array(const T& str)
+{
+    std::vector<uint32_t> result(str.size());
+    return make_suffix_array(str, result);
+}
+
 // rank array is inverse suffix array
+std::vector<uint32_t>& make_rank_array(const std::vector<uint32_t>& suffix_array,
+                                       std::vector<uint32_t>& result);
 std::vector<uint32_t> make_rank_array(const std::vector<uint32_t>& suffix_array);
-std::vector<uint32_t> make_rank_array(const std::vector<uint32_t>& suffix_array,
-                                      const std::size_t extra_capacity);
 
 namespace detail
 {
@@ -113,31 +108,29 @@ namespace detail
     // methods in practice.
     
     template <typename T>
-    uint32_t forward_lce(const T& str, uint32_t i, uint32_t j, uint32_t n)
+    auto forward_lce(const T& str, uint32_t i, uint32_t j, uint32_t n)
     {
-        using std::cbegin;
-        return static_cast<uint32_t>(std::distance(cbegin(str) + i, std::mismatch(cbegin(str) + i,
-                                                                                  cbegin(str) + n,
-                                                                                  cbegin(str) + j).first));
+        using std::cbegin; using std::distance; using std::next; using std::mismatch;
+        const auto it = cbegin(str);
+        return static_cast<uint32_t>(distance(next(it, i), mismatch(next(it, i), next(it, n), next(it, j)).first));
     }
     
     template <typename T>
-    uint32_t forward_lce(const T& str, uint32_t i, uint32_t j)
+    auto forward_lce(const T& str, uint32_t i, uint32_t j)
     {
         return forward_lce(str, i, j, static_cast<uint32_t>(str.size()));
     }
     
     template <typename T>
-    uint32_t backward_lce(const T& str, uint32_t i, uint32_t j, uint32_t n)
+    auto backward_lce(const T& str, uint32_t i, uint32_t j, uint32_t n)
     {
-        using std::crend;
-        return static_cast<uint32_t>(std::distance(crend(str) - i - 1, std::mismatch(crend(str) - i - 1,
-                                                                                     crend(str) - n,
-                                                                                     crend(str) - j - 1).first));
+        using std::crend; using std::distance; using std::prev;  using std::mismatch;
+        const auto it = crend(str);
+        return static_cast<uint32_t>(distance(prev(it, i + 1), mismatch(prev(it, i + 1), prev(it, n), prev(it, j + 1)).first));
     }
     
     template <typename T>
-    uint32_t backward_lce(const T& str, uint32_t i, uint32_t j)
+    auto backward_lce(const T& str, uint32_t i, uint32_t j)
     {
         return backward_lce(str, i, j, uint32_t {});
     }
@@ -147,13 +140,17 @@ namespace detail
 template <typename T>
 std::vector<uint32_t>
 make_lcp_array(const T& str, const std::vector<uint32_t>& suffix_array,
-               const std::size_t extra_capacity = 0)
+               std::vector<uint32_t>& result)
 {
-    const auto rank = make_rank_array(suffix_array, extra_capacity);
+    const auto rank = make_rank_array(suffix_array);
     
-    std::vector<uint32_t> result(suffix_array.size() + extra_capacity);
+    const auto str_len = str.size();
     
-    for (uint32_t i {0}, h {0}; i < (suffix_array.size() - extra_capacity); ++i) {
+    assert(rank.size() == str_len);
+    
+    result.resize(str_len);
+    
+    for (uint32_t i {0}, h {0}; i < str_len; ++i) {
         if (rank[i] > 0) {
             h += detail::forward_lce(str, i + h, suffix_array[rank[i] - 1] + h);
             result[rank[i]] = h;
@@ -164,26 +161,48 @@ make_lcp_array(const T& str, const std::vector<uint32_t>& suffix_array,
     return result;
 }
 
+template <typename T>
+std::vector<uint32_t>
+make_lcp_array(const T& str, const std::vector<uint32_t>& suffix_array)
+{
+    std::vector<uint32_t> result(str.size());
+    return make_lcp_array(str, suffix_array, result);
+}
+
 // LPF = Longest Previous Factor
 std::vector<uint32_t>
-make_lpf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
+make_lpf_array(std::vector<uint32_t>& sa, std::vector<uint32_t>& lcp);
+
 std::pair<std::vector<uint32_t>, std::vector<uint32_t>>
-make_lpf_and_prev_occ_arrays(std::vector<uint32_t> sa, std::vector<uint32_t> lcp);
+make_lpf_and_prev_occ_arrays(std::vector<uint32_t>& sa, std::vector<uint32_t>& lcp);
+
+namespace detail
+{
+    template <typename T>
+    void make_sa_and_lcp(const T& str, std::vector<uint32_t>& sa, std::vector<uint32_t>& lcp)
+    {
+        const auto n = str.size() + 1; // + 1 to avoid reallocation downstream
+        sa.reserve(n);
+        make_suffix_array(str, sa);
+        lcp.reserve(n);
+        make_lcp_array(str, sa, lcp);
+    }
+} // namespace detail
 
 template <typename T>
 auto make_lpf_array(const T& str)
 {
-    auto sa  = make_suffix_array(str, 1);
-    auto lcp = make_lcp_array(str, sa, 1);
-    return make_lpf_array(std::move(sa), std::move(lcp));
+    std::vector<uint32_t> sa {}, lcp {};
+    detail::make_sa_and_lcp(str, sa, lcp);
+    return make_lpf_array(sa, lcp);
 }
 
 template <typename T>
 auto make_lpf_and_prev_occ_arrays(const T& str)
 {
-    auto sa  = make_suffix_array(str, 1);
-    auto lcp = make_lcp_array(str, sa, 1);
-    return make_lpf_and_prev_occ_arrays(std::move(sa), std::move(lcp));
+    std::vector<uint32_t> sa {}, lcp {};
+    detail::make_sa_and_lcp(str, sa, lcp);
+    return make_lpf_and_prev_occ_arrays(sa, lcp);
 }
 
 struct LZBlock
@@ -201,14 +220,20 @@ std::vector<LZBlock> lempel_ziv_factorisation(const T& str)
     
     const auto lpf = make_lpf_array(str);
     
-    std::vector<LZBlock> result {};
-    result.reserve(str.size()); // max possible blocks
+    const auto str_len = str.size();
     
-    uint32_t end {1};  // start at 1 because the first element of lpf is sentinel
+    assert(lpf.size() == str_len);
+    
+    std::vector<LZBlock> result {};
+    result.reserve(str_len); // max possible blocks
+    
+    assert(lpf.front() == 0);
+    
+    uint32_t end {1};  // start at 1 because the first element of lpf is always 0
     
     result.emplace_back(0, end);
     
-    while (end < str.size()) {
+    while (end < str_len) {
         const auto m = std::max(uint32_t {1}, lpf[end]);
         result.emplace_back(end, m);
         end += m;
@@ -229,18 +254,24 @@ lempel_ziv_factorisation_with_prev_block_occurences(const T& str)
     std::vector<uint32_t> lpf, prev_occ;
     std::tie(lpf, prev_occ) = make_lpf_and_prev_occ_arrays(str);
     
+    const auto str_len = str.size();
+    
+    assert(lpf.size() == str_len);
+    
     std::vector<LZBlock> lz_blocks {};
-    lz_blocks.reserve(str.size()); // max possible blocks
+    lz_blocks.reserve(str_len); // max possible blocks
     
     std::vector<uint32_t> prev_lz_block_occurrence {};
-    prev_lz_block_occurrence.reserve(str.size());
+    prev_lz_block_occurrence.reserve(str_len);
     
-    uint32_t end {1}; // start at 1 because the first element of lpf is sentinel
+    assert(lpf.front() == 0);
+    
+    uint32_t end {1}; // start at 1 because the first element of lpf is always 0
     
     lz_blocks.emplace_back(0, end);
     prev_lz_block_occurrence.emplace_back(-1);
     
-    while (end < str.size()) {
+    while (end < str_len) {
         const auto m = std::max(uint32_t {1}, lpf[end]);
         lz_blocks.emplace_back(end, m);
         prev_lz_block_occurrence.emplace_back(prev_occ[end]);
@@ -255,13 +286,15 @@ lempel_ziv_factorisation_with_prev_block_occurences(const T& str)
 
 namespace detail
 {
+    using RunQueue = std::deque<StringRun>;
+    
     // Implements Mains algorithm found in Main (1989). Obscure notation as in paper.
     template <typename T>
-    std::deque<StringRun>
+    RunQueue
     find_leftmost_maximal_repetitions(const T& str, const std::vector<LZBlock>& lz_blocks,
                                       const uint32_t min_period = 1, const uint32_t max_period = -1)
     {
-        std::deque<StringRun> result {};
+        RunQueue result {};
         
         for (uint32_t h {1}; h < lz_blocks.size(); ++h) {
             const auto u   = lz_blocks[h].pos;
@@ -291,43 +324,57 @@ namespace detail
             }
         }
         
+        result.shrink_to_fit();
+        
         return result;
     }
     
-    // just reserves enough space to avoid reallocations
-    std::vector<std::vector<StringRun>> get_init_buckets(std::size_t n, const std::deque<StringRun>& lmrs);
+    using RunBuckets = std::vector<std::vector<StringRun>>;
+    
+    void init_end_buckets(std::size_t n, const RunQueue& lmrs, RunBuckets& result);
     
     template <typename T>
-    std::vector<std::vector<StringRun>>
-    get_end_buckets(const T& str, const std::vector<LZBlock>& lz_blocks,
-                    const uint32_t min_period, const uint32_t max_period)
+    RunBuckets extract_runs_end_buckets(const T& str, const std::vector<LZBlock>& lz_blocks,
+                                        const uint32_t min_period, const uint32_t max_period)
     {
         const auto lmrs = find_leftmost_maximal_repetitions(str, lz_blocks, min_period, max_period);
         
-        auto result = get_init_buckets(str.size(), lmrs);
+        RunBuckets result;
+        
+        init_end_buckets(str.size(), lmrs, result);
+        
+        assert(result.size() == str.size());
         
         for (const auto& run : lmrs) {
-            auto& curr = result[run.pos + run.length - 1];
-            if (std::find(std::cbegin(curr), std::cend(curr), run) == std::cend(curr)) {
-                curr.push_back(run);
+            auto& bucket = result[run.pos + run.length - 1];
+            
+            const auto it = std::find(std::begin(bucket), std::end(bucket), run);
+            
+            if (it == std::end(bucket)) {
+                bucket.push_back(run);
+            } else if (it->period < run.period) {
+                *it = run;
             }
         }
         
         return result;
     }
     
-    // just reserves enough space to avoid reallocations
-    std::vector<std::vector<StringRun>>
-    get_init_buckets(std::size_t n, const std::vector<std::vector<StringRun>>& end_buckets);
+    void remove_empty_buckets(RunBuckets& buckets);
+    
+    void init_sorted_buckets(std::size_t n, const RunBuckets& end_buckets, RunBuckets& result);
     
     template <typename T>
-    std::vector<std::vector<StringRun>>
-    get_sorted_buckets(const T& str, const std::vector<LZBlock>& lz_blocks,
-                       const uint32_t min_period, const uint32_t max_period)
+    RunBuckets extract_runs_with_bucket_sort(const T& str, const std::vector<LZBlock>& lz_blocks,
+                                             const uint32_t min_period, const uint32_t max_period)
     {
-        auto end_buckets = get_end_buckets(str, lz_blocks, min_period, max_period);
+        auto end_buckets = extract_runs_end_buckets(str, lz_blocks, min_period, max_period);
         
-        auto result = get_init_buckets(str.size(), end_buckets);
+        remove_empty_buckets(end_buckets);
+        
+        RunBuckets result;
+        
+        init_sorted_buckets(str.size(), end_buckets, result);
         
         for (auto& bucket : end_buckets) {
             for (const auto& run : bucket) {
@@ -341,13 +388,60 @@ namespace detail
     }
     
     template <typename T>
-    std::vector<std::vector<StringRun>>
-    find_maximal_repetitions(const T& str,
-                             const std::vector<LZBlock>& lz_blocks,
-                             const std::vector<uint32_t>& prev_lz_block_occurrence,
-                             const uint32_t min_period, const uint32_t max_period)
+    RunBuckets extract_runs_with_inplace_sort(const T& str, const std::vector<LZBlock>& lz_blocks,
+                                              const uint32_t min_period, const uint32_t max_period)
     {
-        auto sorted_buckets = get_sorted_buckets(str, lz_blocks, min_period, max_period);
+        std::vector<StringRun> lmrs;
+        
+        {
+            // switch from std::deque to std::vector
+            auto tmp_lmrs = find_leftmost_maximal_repetitions(str, lz_blocks, min_period, max_period);
+            lmrs.assign(std::begin(tmp_lmrs), std::end(tmp_lmrs));
+        }
+        
+        std::sort(std::begin(lmrs), std::end(lmrs),
+                  [] (const auto& lhs, const auto& rhs) {
+                      if (lhs.pos != rhs.pos) return lhs.pos < rhs.pos;
+                      if (lhs.length != rhs.length) return lhs.length < rhs.length;
+                      return lhs.period > rhs.period;
+                  });
+        
+        lmrs.erase(std::unique(std::begin(lmrs), std::end(lmrs)), std::end(lmrs));
+        
+        lmrs.shrink_to_fit();
+        
+        RunBuckets result(str.size(), RunBuckets::value_type {});
+        
+        for (auto it = std::cbegin(lmrs); it != std::cend(lmrs);) {
+            const auto cur_pos = it->pos;
+            
+            const auto it2 = std::find_if_not(std::next(it), std::cend(lmrs),
+                                              [cur_pos] (const auto& run) {
+                                                  return run.pos == cur_pos;
+                                              });
+            
+            result[cur_pos].assign(it, it2);
+            
+            it = it2;
+        }
+        
+        return result;
+    }
+    
+    template <typename T>
+    RunBuckets extract_run_buckets(const T& str, const std::vector<LZBlock>& lz_blocks,
+                                   const uint32_t min_period, const uint32_t max_period)
+    {
+        return extract_runs_with_bucket_sort(str, lz_blocks, min_period, max_period);
+    }
+    
+    template <typename T>
+    RunBuckets find_maximal_repetitions(const T& str,
+                                        const std::vector<LZBlock>& lz_blocks,
+                                        const std::vector<uint32_t>& prev_lz_block_occurrence,
+                                        const uint32_t min_period, const uint32_t max_period)
+    {
+        auto sorted_buckets = extract_run_buckets(str, lz_blocks, min_period, max_period);
         
         for (uint32_t k {0}; k < lz_blocks.size(); ++k) {
             const auto& block = lz_blocks[k];
@@ -374,7 +468,8 @@ namespace detail
                                        return StringRun {run.pos + delta, run.length, run.period};
                                    });
                     
-                    sorted_buckets[j].insert(std::begin(sorted_buckets[j]), std::cbegin(shifted_targets),
+                    sorted_buckets[j].insert(std::begin(sorted_buckets[j]),
+                                             std::cbegin(shifted_targets),
                                              std::cend(shifted_targets));
                 }
             }
@@ -386,8 +481,7 @@ namespace detail
     
     // Implements the algorithm described in Kolpakov & Kucherov (1999)
     template <typename T>
-    std::vector<std::vector<StringRun>>
-    find_maximal_repetitions(const T& str, const uint32_t min_period, const uint32_t max_period)
+    RunBuckets find_maximal_repetitions(const T& str, const uint32_t min_period, const uint32_t max_period)
     {
         std::vector<LZBlock> lz_blocks;
         std::vector<uint32_t> prev_lz_block_occurrence;
@@ -397,20 +491,17 @@ namespace detail
         return find_maximal_repetitions(str, lz_blocks, prev_lz_block_occurrence, min_period, max_period);
     }
     
-    template <typename T>
-    auto count_runs(const std::vector<T>& buckets)
-    {
-        return std::accumulate(std::cbegin(buckets), std::cend(buckets), std::size_t {0},
-                               [] (const auto curr, const auto& bucket) {
-                                   return curr + bucket.size();
-                               });
-    }
+    std::size_t count_runs(const RunBuckets& buckets);
     
     template <typename ForwardIt>
     std::vector<StringRun>
     find_homopolymers(const ForwardIt first, const ForwardIt last)
     {
         std::vector<StringRun> result {};
+        
+        if (first == last) return result;
+        
+        result.reserve(std::min(static_cast<std::size_t>(std::distance(first, last)), std::size_t {1024}));
         
         for (auto curr = first; curr != last; ) {
             const auto it = std::adjacent_find(curr, last);
@@ -519,7 +610,7 @@ find_maximal_repetitions(const T& str, uint32_t min_period = 1, const uint32_t m
         throw std::domain_error {"find_maximal_repetitions: given unsatisfiable condition min_period > max_period"};
     }
     
-    if (max_period <= 3) { // The naive algorithm is faster in these cases
+    if (max_period <= 3) { // the naive algorithm is faster in these cases
         if (min_period == max_period) {
             switch(min_period) {
                 case 1: return detail::find_homopolymers(str);

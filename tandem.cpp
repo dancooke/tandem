@@ -28,9 +28,10 @@
 
 namespace Tandem
 {
-std::vector<uint32_t> make_rank_array(const std::vector<uint32_t>& suffix_array)
+std::vector<uint32_t>& make_rank_array(const std::vector<uint32_t>& suffix_array,
+                                       std::vector<uint32_t>& result)
 {
-    std::vector<uint32_t> result(suffix_array.size());
+    result.resize(suffix_array.size());
     
     for (uint32_t i {0}; i < suffix_array.size(); ++i) {
         result[suffix_array[i]] = i;
@@ -39,22 +40,19 @@ std::vector<uint32_t> make_rank_array(const std::vector<uint32_t>& suffix_array)
     return result;
 }
 
-std::vector<uint32_t> make_rank_array(const std::vector<uint32_t>& suffix_array,
-                                      const std::size_t extra_capacity)
+std::vector<uint32_t> make_rank_array(const std::vector<uint32_t>& suffix_array)
 {
-    std::vector<uint32_t> result(suffix_array.size() - extra_capacity);
-    
-    for (uint32_t i {0}; i < (suffix_array.size() - extra_capacity); ++i) {
-        result[suffix_array[i]] = i;
-    }
-    
-    return result;
+    std::vector<uint32_t> result(suffix_array.size());
+    return make_rank_array(suffix_array, result);
 }
 
 // Implementation of algorithm found in Crochemore et al. (2008)
-std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint32_t> lcp)
+std::vector<uint32_t>
+make_lpf_array(std::vector<uint32_t>& sa, std::vector<uint32_t>& lcp)
 {
     const auto n = sa.size();
+    
+    assert(n == lcp.size());
     
     std::vector<uint32_t> result(n, 0);
     
@@ -69,28 +67,33 @@ std::vector<uint32_t> make_lpf_array(std::vector<uint32_t> sa, std::vector<uint3
         while (!stack.empty()
                && (sa[i] == -1 || sa[i] < sa[stack.top()]
                    || (sa[i] > sa[stack.top()] && lcp[i] <= lcp[stack.top()]))) {
-            if (sa[i] < sa[stack.top()]) {
-                std::tie(lcp[i], result[sa[stack.top()]]) = std::minmax(lcp[stack.top()], uint32_t {lcp[i]});
-            } else {
-                result[sa[stack.top()]] = lcp[stack.top()];
-            }
-            
-            stack.pop();
-        }
+                   if (sa[i] < sa[stack.top()]) {
+                       std::tie(lcp[i], result[sa[stack.top()]]) = std::minmax(lcp[stack.top()], uint32_t {lcp[i]});
+                   } else {
+                       result[sa[stack.top()]] = lcp[stack.top()];
+                   }
+                   
+                   stack.pop();
+               }
         
         if (i < n) {
             stack.push(i);
         }
     }
     
+    sa.pop_back();
+    lcp.pop_back();
+    
     return result;
 }
 
 // Implementation of algorithm found in Crochemore et al. (2008)
 std::pair<std::vector<uint32_t>, std::vector<uint32_t>>
-make_lpf_and_prev_occ_arrays(std::vector<uint32_t> sa, std::vector<uint32_t> lcp)
+make_lpf_and_prev_occ_arrays(std::vector<uint32_t>& sa, std::vector<uint32_t>& lcp)
 {
     const auto n = sa.size();
+    
+    assert(n == lcp.size());
     
     std::vector<uint32_t> lpf(n, 0), prev_occ(n, 0);
     
@@ -124,13 +127,15 @@ make_lpf_and_prev_occ_arrays(std::vector<uint32_t> sa, std::vector<uint32_t> lcp
         }
     }
     
+    sa.pop_back();
+    lcp.pop_back();
+    
     return std::make_pair(std::move(lpf), std::move(prev_occ));
 }
 
 namespace detail
 {
-    std::vector<std::vector<StringRun>>
-    get_init_buckets(const std::size_t n, const std::deque<StringRun>& lmrs)
+    void init_end_buckets(const std::size_t n, const RunQueue& lmrs, RunBuckets& result)
     {
         std::vector<uint32_t> counts(n, 0);
         
@@ -138,17 +143,24 @@ namespace detail
             ++counts[run.pos + run.length - 1];
         }
         
-        std::vector<std::vector<StringRun>> result(n, std::vector<StringRun> {});
+        result.resize(n, std::vector<StringRun> {});
         
         for (std::size_t i {0}; i < n; ++i) {
-            result[i].reserve(counts[i]);
+            result[i].reserve(counts[i]); // just reserves enough space to avoid reallocations
         }
-        
-        return result;
     }
     
-    std::vector<std::vector<StringRun>>
-    get_init_buckets(const std::size_t n, const std::vector<std::vector<StringRun>>& end_buckets)
+    void remove_empty_buckets(RunBuckets& buckets)
+    {
+        const auto it = std::remove_if(std::begin(buckets), std::end(buckets),
+                                       [] (const auto& bucket) {
+                                           return bucket.empty();
+                                       });
+        buckets.erase(it, std::end(buckets));
+        buckets.shrink_to_fit();
+    }
+    
+    void init_sorted_buckets(const std::size_t n, const RunBuckets& end_buckets, RunBuckets& result)
     {
         std::vector<uint32_t> counts(n, 0);
         
@@ -158,13 +170,19 @@ namespace detail
             }
         }
         
-        std::vector<std::vector<StringRun>> result(n, std::vector<StringRun> {});
+        result.resize(n, std::vector<StringRun> {});
         
         for (std::size_t i {0}; i < n; ++i) {
-            result[i].reserve(counts[i]);
+            result[i].reserve(counts[i]); // just reserves enough space to avoid reallocations
         }
-        
-        return result;
+    }
+    
+    std::size_t count_runs(const RunBuckets& buckets)
+    {
+        return std::accumulate(std::cbegin(buckets), std::cend(buckets), std::size_t {0},
+                               [] (const auto curr, const auto& bucket) {
+                                   return curr + bucket.size();
+                               });
     }
 } // namespace detail
 
