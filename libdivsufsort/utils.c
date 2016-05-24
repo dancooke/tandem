@@ -164,26 +164,17 @@ sufcheck(const sauchar_t *T, const saidx_t *SA,
   saidx_t i, p, q, t;
   saint_t c;
 
-  if(verbose) { fprintf(stderr, "sufcheck: "); }
-
   /* Check arguments. */
   if((T == NULL) || (SA == NULL) || (n < 0)) {
-    if(verbose) { fprintf(stderr, "Invalid arguments.\n"); }
     return -1;
   }
   if(n == 0) {
-    if(verbose) { fprintf(stderr, "Done.\n"); }
     return 0;
   }
 
   /* check range: [0..n-1] */
   for(i = 0; i < n; ++i) {
     if((SA[i] < 0) || (n <= SA[i])) {
-      if(verbose) {
-        fprintf(stderr, "Out of the range [0,%" PRIdSAIDX_T "].\n"
-                        "  SA[%" PRIdSAIDX_T "]=%" PRIdSAIDX_T "\n",
-                        n - 1, i, SA[i]);
-      }
       return -2;
     }
   }
@@ -191,12 +182,6 @@ sufcheck(const sauchar_t *T, const saidx_t *SA,
   /* check first characters. */
   for(i = 1; i < n; ++i) {
     if(T[SA[i - 1]] > T[SA[i]]) {
-      if(verbose) {
-        fprintf(stderr, "Suffixes in wrong order.\n"
-                        "  T[SA[%" PRIdSAIDX_T "]=%" PRIdSAIDX_T "]=%d"
-                        " > T[SA[%" PRIdSAIDX_T "]=%" PRIdSAIDX_T "]=%d\n",
-                        i - 1, SA[i - 1], T[SA[i - 1]], i, SA[i], T[SA[i]]);
-      }
       return -3;
     }
   }
@@ -222,12 +207,6 @@ sufcheck(const sauchar_t *T, const saidx_t *SA,
       t = q;
     }
     if((t < 0) || (p != SA[t])) {
-      if(verbose) {
-        fprintf(stderr, "Suffix in wrong position.\n"
-                        "  SA[%" PRIdSAIDX_T "]=%" PRIdSAIDX_T " or\n"
-                        "  SA[%" PRIdSAIDX_T "]=%" PRIdSAIDX_T "\n",
-                        t, (0 <= t) ? SA[t] : -1, i, SA[i]);
-      }
       return -4;
     }
     if(t != q) {
@@ -236,7 +215,6 @@ sufcheck(const sauchar_t *T, const saidx_t *SA,
     }
   }
 
-  if(1 <= verbose) { fprintf(stderr, "Done.\n"); }
   return 0;
 }
 
