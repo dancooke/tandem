@@ -37,11 +37,11 @@ void find_big_repeats(std::string& sequence)
         sequence.push_back('N'); // last character must not be in alphabet
     }
     
-    auto n_shift_map = Tandem::collapse(sequence, 'N'); // makes search a lot faster
+    auto n_shift_map = tandem::collapse(sequence, 'N'); // makes search a lot faster
     
-    auto repeats = Tandem::find_maximal_repetitions(sequence);
+    auto repeats = tandem::extract_exact_tandem_repeats(sequence);
     
-    Tandem::rebase(repeats, n_shift_map);
+    tandem::rebase(repeats, n_shift_map);
     
     std::cout << "Found " << repeats.size() << " repeats" << std::endl;
     
