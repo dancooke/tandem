@@ -219,24 +219,24 @@ std::vector<LZBlock> lempel_ziv_factorisation(const T& str)
 
 // Implementation of algorithm found in Crochemore et al. (2008)
 template <typename T>
-std::pair<std::vector<LZBlock>, std::vector<uint32_t>>
+std::pair<std::vector<LZBlock>, std::vector<std::uint32_t>>
 lempel_ziv_factorisation_with_prev_block_occurences(const T& str)
 {
     if (str.empty()) return {{}, {}};
     
-    std::vector<uint32_t> lpf, prev_occ;
+    std::vector<std::uint32_t> lpf, prev_occ;
     std::tie(lpf, prev_occ) = make_lpf_and_prev_occ_arrays(str);
     std::vector<LZBlock> lz_blocks {};
     lz_blocks.reserve(str.size()); // max possible blocks
-    std::vector<uint32_t> prev_lz_block_occurrence {};
+    std::vector<std::uint32_t> prev_lz_block_occurrence {};
     prev_lz_block_occurrence.reserve(str.size());
     
     std::uint32_t end {1}; // start at 1 because the first element of lpf is sentinel
     lz_blocks.emplace_back(0, end);
-    prev_lz_block_occurrence.emplace_back(-1);
+    prev_lz_block_occurrence.push_back(std::numeric_limits<std::uint32_t>::max());
     
     while (end < str.size()) {
-        const auto m = std::max(uint32_t {1}, lpf[end]);
+        const auto m = std::max(std::uint32_t {1}, lpf[end]);
         lz_blocks.emplace_back(end, m);
         prev_lz_block_occurrence.emplace_back(prev_occ[end]);
         end += m;
@@ -254,7 +254,8 @@ namespace detail {
 template <typename T>
 std::deque<Repeat>
 find_leftmost_maximal_repetitions(const T& str, const std::vector<LZBlock>& lz_blocks,
-                                  const std::uint32_t min_period = 1, const std::uint32_t max_period = -1)
+                                  const std::uint32_t min_period = 1,
+                                  const std::uint32_t max_period = std::numeric_limits<std::uint32_t>::max())
 {
     std::deque<Repeat> result {};
     
@@ -462,7 +463,9 @@ void merge(Container2&& src, Container1& dst)
 
 template <typename T>
 std::vector<Repeat>
-extract_exact_tandem_repeats(const T& str, std::uint32_t min_period = 1, const std::uint32_t max_period = -1)
+extract_exact_tandem_repeats(const T& str,
+                             std::uint32_t min_period = 1,
+                             const std::uint32_t max_period = std::numeric_limits<std::uint32_t>::max())
 {
     if (min_period == 0) ++min_period;
     if (str.empty() || str.size() < min_period) return {};
