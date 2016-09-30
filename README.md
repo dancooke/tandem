@@ -1,11 +1,11 @@
-# Tandem
+# tandem
 
-Tandem is a small C++14 library for finding tandem repeats in strings. At the moment it only finds exact repeats, but I may extend this at some point to find approximate repeats.
+tandem is a small C++14 library for finding tandem repeats in strings. At the moment it only finds exact repeats, but I may extend this at some point to find approximate repeats.
 
 example.cpp includes a simple example for DNA/RNA sequences. To compile the example just `make` in the tandem directory. You can run it like
 
     echo NNNACGTACGTNNAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGNNNNNNNN | ./tandem
 
-Or using the command line tool found in my project "bioio"
+Or using the command line tool found in my project [bioio](https://github.com/dancooke/bioio)
 
     ./fasta human_g1k_v37.fasta Y | ./tandem
