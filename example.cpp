@@ -79,9 +79,10 @@ std::vector<tandem::Repeat> get_repeats(std::string sequence)
 {
     if (sequence.empty()) return {};
     std::cout << "Looking for repeats in " << sequence.size() << "bp" << std::endl;
-    if (sequence.back() != 'N') {
+    if (sequence.back() != '$') {
+        assert(std::find(std::cbegin(sequence), std::cend(sequence), '$') == std::cend(sequence));
         sequence.reserve(sequence.size() + 1);
-        sequence.push_back('N'); // last character must not be in alphabet
+        sequence.push_back('$'); // last character must not be in alphabet
     }
     auto n_shift_map = tandem::collapse(sequence, 'N'); // makes search a lot faster
     auto repeats = tandem::extract_exact_tandem_repeats(sequence);
