@@ -1,6 +1,6 @@
 /*  tandem.cpp
  
- Copyright (C) 2017 University of Oxford.
+ Copyright (C) 2017-2018 University of Oxford.
  
  Author: Daniel Cooke <dcooke@well.ox.ac.uk>
  
@@ -101,37 +101,38 @@ make_lpf_and_prev_occ_arrays(std::vector<std::uint32_t> sa, std::vector<std::uin
     return std::make_pair(std::move(lpf), std::move(prev_occ));
 }
 
-namespace detail
+namespace detail {
+
+std::vector<std::vector<Repeat>>
+get_init_buckets(const std::size_t n, const LMRVector& lmrs)
 {
-    std::vector<std::vector<Repeat>>
-    get_init_buckets(const std::size_t n, const std::deque<Repeat>& lmrs)
-    {
-        std::vector<std::uint32_t> counts(n, 0);
-        for (const auto& run : lmrs) {
-            ++counts[run.pos + run.length - 1];
-        }
-        std::vector<std::vector<Repeat>> result(n, std::vector<Repeat> {});
-        for (std::size_t i {0}; i < n; ++i) {
-            result[i].reserve(counts[i]);
-        }
-        return result;
+    std::vector<std::uint32_t> counts(n, 0);
+    for (const auto& run : lmrs) {
+        ++counts[run.pos + run.length - 1];
     }
-    
-    std::vector<std::vector<Repeat>>
-    get_init_buckets(const std::size_t n, const std::vector<std::vector<Repeat>>& end_buckets)
-    {
-        std::vector<std::uint32_t> counts(n, 0);
-        for (const auto& bucket : end_buckets) {
-            for (const auto& run : bucket) {
-                ++counts[run.pos];
-            }
-        }
-        std::vector<std::vector<Repeat>> result(n, std::vector<Repeat> {});
-        for (std::size_t i {0}; i < n; ++i) {
-            result[i].reserve(counts[i]);
-        }
-        return result;
+    std::vector<std::vector<Repeat>> result(n, std::vector<Repeat> {});
+    for (std::size_t i {0}; i < n; ++i) {
+        result[i].reserve(counts[i]);
     }
+    return result;
+}
+
+std::vector<std::vector<Repeat>>
+get_init_buckets(const std::size_t n, const std::vector<std::vector<Repeat>>& end_buckets)
+{
+    std::vector<std::uint32_t> counts(n, 0);
+    for (const auto& bucket : end_buckets) {
+        for (const auto& run : bucket) {
+            ++counts[run.pos];
+        }
+    }
+    std::vector<std::vector<Repeat>> result(n, std::vector<Repeat> {});
+    for (std::size_t i {0}; i < n; ++i) {
+        result[i].reserve(counts[i]);
+    }
+    return result;
+}
+
 } // namespace detail
 
 void rebase(std::vector<tandem::Repeat>& runs, const std::map<std::size_t, std::size_t>& shift_map)
