@@ -75,10 +75,10 @@ bool is_rna(const SequenceType& sequence)
     return sequence.find_first_not_of("ACGUN") == SequenceType::npos;
 }
 
-std::vector<tandem::Repeat> get_repeats(std::string sequence)
+std::vector<tandem::Repeat> get_repeats(std::string sequence, const bool logging = true)
 {
     if (sequence.empty()) return {};
-    std::clog << "Looking for repeats in " << sequence.size() << "bp" << std::endl;
+    if (logging) std::clog << "Looking for repeats in " << sequence.size() << "bp" << std::endl;
     if (sequence.back() != '$') {
         assert(std::find(std::cbegin(sequence), std::cend(sequence), '$') == std::cend(sequence));
         sequence.reserve(sequence.size() + 1);
@@ -160,6 +160,40 @@ void print(RepeatIterator first, RepeatIterator last, const std::string& sequenc
                    [&] (const auto& repeat) -> PrintableRepeat { return {sequence, repeat}; });
 }
 
+template <typename Range>
+std::ostream& pretty_print(std::ostream& os, const Range& range, const char* delim)
+{
+    if (!range.empty()) {
+        using T = typename Range::value_type;
+        std::copy(std::cbegin(range), std::prev(std::cend(range)), std::ostream_iterator<T> {os, delim});
+        os << range.back();
+    }
+    return os;
+}
+
+using CSVLine = std::vector<std::string>;
+
+CSVLine to_csv_line(const tandem::Repeat& repeat, const std::string& sequence)
+{
+    CSVLine result {};
+    result.reserve(4);
+    result.push_back(std::to_string(repeat.pos));
+    result.push_back(std::to_string(repeat.length));
+    result.push_back(std::to_string(repeat.period));
+    result.push_back(sequence.substr(repeat.pos, repeat.period));
+    return result;
+}
+
+template <typename Iterator>
+void print_csv_format(Iterator first_repeat, Iterator last_repeat, const std::string& sequence)
+{
+    std::cout << "pos,length,period,motif" << std::endl;
+    std::for_each(first_repeat, last_repeat, [&] (const auto& repeat) {
+        pretty_print(std::cout, to_csv_line(repeat, sequence), ",");
+        std::cout << std::endl;
+    });
+}
+
 void report_biggest_periods(std::vector<tandem::Repeat>& repeats, const std::string& sequence,
                             const std::size_t max, const int min_size = -1)
 {
@@ -194,26 +228,34 @@ int main(int argc, char** argv)
     std::getline(std::cin, sequence);
     capitalise(sequence);
     if (!is_dna(sequence) && !is_rna(sequence)) {
-        std::clog << "this example is only for DNA or RNA sequences" << std::endl;
+        std::cerr << "this example is only for DNA or RNA sequences" << std::endl;
         exit(0);
     }
     auto repeats = get_repeats(sequence);
-    std::size_t max_report {10};
-    if (cmd_option_exists(argv, argv + argc, "-n")) {
-        const std::string user_max_report {get_cmd_option(argv, argv + argc, "-n")};
-        max_report = std::stoull(user_max_report);
-    }
     std::clog << "Found " << repeats.size() << " tandem repeats!" << std::endl;
-    int min_period {-1};
-    if (cmd_option_exists(argv, argv + argc, "-p")) {
-        const std::string user_min_period {get_cmd_option(argv, argv + argc, "-p")};
-        min_period = std::stoi(user_min_period);
+    if (cmd_option_exists(argv, argv + argc, "-a")) {
+        if (cmd_option_exists(argv, argv + argc, "-c")) {
+            print_csv_format(std::cbegin(repeats), std::cend(repeats), sequence);
+        } else {
+            print(std::begin(repeats), std::end(repeats), sequence);
+        }
+    } else {
+        std::size_t max_report {10};
+        if (cmd_option_exists(argv, argv + argc, "-n")) {
+            const std::string user_max_report {get_cmd_option(argv, argv + argc, "-n")};
+            max_report = std::stoull(user_max_report);
+        }
+        int min_period {-1};
+        if (cmd_option_exists(argv, argv + argc, "-p")) {
+            const std::string user_min_period {get_cmd_option(argv, argv + argc, "-p")};
+            min_period = std::stoi(user_min_period);
+        }
+        report_biggest_periods(repeats, sequence, max_report, min_period);
+        int min_length {-1};
+        if (cmd_option_exists(argv, argv + argc, "-l")) {
+            const std::string user_min_length {get_cmd_option(argv, argv + argc, "-l")};
+            min_length = std::stoi(user_min_length);
+        }
+        report_biggest_lengths(repeats, sequence, max_report, min_length);
     }
-    //report_biggest_periods(repeats, sequence, max_report, min_period);
-    int min_length {-1};
-    if (cmd_option_exists(argv, argv + argc, "-l")) {
-        const std::string user_min_length {get_cmd_option(argv, argv + argc, "-l")};
-        min_length = std::stoi(user_min_length);
-    }
-    report_biggest_lengths(repeats, sequence, max_report, min_length);
 }
