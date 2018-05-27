@@ -78,7 +78,7 @@ bool is_rna(const SequenceType& sequence)
 std::vector<tandem::Repeat> get_repeats(std::string sequence)
 {
     if (sequence.empty()) return {};
-    std::cout << "Looking for repeats in " << sequence.size() << "bp" << std::endl;
+    std::clog << "Looking for repeats in " << sequence.size() << "bp" << std::endl;
     if (sequence.back() != '$') {
         assert(std::find(std::cbegin(sequence), std::cend(sequence), '$') == std::cend(sequence));
         sequence.reserve(sequence.size() + 1);
@@ -170,7 +170,7 @@ void report_biggest_periods(std::vector<tandem::Repeat>& repeats, const std::str
         nth = std::lower_bound(std::begin(repeats), nth, static_cast<std::size_t>(min_size), PeriodGreater {});
         n = std::distance(std::begin(repeats), nth);
     }
-    std::cout << "Printing the " << n << " repeats with the largest periods" << std::endl;
+    std::clog << "Printing the " << n << " repeats with the largest periods" << std::endl;
     print(std::begin(repeats), nth, sequence);
 }
 
@@ -184,7 +184,7 @@ void report_biggest_lengths(std::vector<tandem::Repeat>& repeats, const std::str
         nth = std::lower_bound(std::begin(repeats), nth, static_cast<std::size_t>(min_size), LengthGreater {});
         n = std::distance(std::begin(repeats), nth);
     }
-    std::cout << "Printing the " << n << " repeats with the largest lengths" << std::endl;
+    std::clog << "Printing the " << n << " repeats with the largest lengths" << std::endl;
     print(std::begin(repeats), nth, sequence);
 }
 
@@ -194,7 +194,7 @@ int main(int argc, char** argv)
     std::getline(std::cin, sequence);
     capitalise(sequence);
     if (!is_dna(sequence) && !is_rna(sequence)) {
-        std::cout << "this example is only for DNA or RNA sequences" << std::endl;
+        std::clog << "this example is only for DNA or RNA sequences" << std::endl;
         exit(0);
     }
     auto repeats = get_repeats(sequence);
@@ -203,13 +203,13 @@ int main(int argc, char** argv)
         const std::string user_max_report {get_cmd_option(argv, argv + argc, "-n")};
         max_report = std::stoull(user_max_report);
     }
-    std::cout << "Found " << repeats.size() << " tandem repeats!" << std::endl;
+    std::clog << "Found " << repeats.size() << " tandem repeats!" << std::endl;
     int min_period {-1};
     if (cmd_option_exists(argv, argv + argc, "-p")) {
         const std::string user_min_period {get_cmd_option(argv, argv + argc, "-p")};
         min_period = std::stoi(user_min_period);
     }
-    report_biggest_periods(repeats, sequence, max_report, min_period);
+    //report_biggest_periods(repeats, sequence, max_report, min_period);
     int min_length {-1};
     if (cmd_option_exists(argv, argv + argc, "-l")) {
         const std::string user_min_length {get_cmd_option(argv, argv + argc, "-l")};
